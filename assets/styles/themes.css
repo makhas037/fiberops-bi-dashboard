@@ -1,0 +1,7 @@
+/* Theme variables for dark/light modes */
+:root[data-theme='dark']{
+  --color-background-primary: #0F172A;
+  --color-background-secondary: #1E293B;
+  --color-text-primary: #F8FAFC;
+  --card-background: rgba(255,255,255,0.03);
+}

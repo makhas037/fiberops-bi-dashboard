@@ -1,0 +1,14 @@
+/* Main global styles for FiberOps BI */
+:root{
+  --primary-color: #8B5CF6;
+  --background-dark: #0F172A;
+  --background-light: #1E293B;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --success-green: #10B981;
+  --error-red: #EF4444;
+  --warning-yellow: #F59E0B;
+}
+body{font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; color:var(--text-primary); background:var(--background-dark);}
+.container{max-width:1200px;margin:0 auto;padding:16px}
+.metric-card{border-radius:12px;padding:16px;background:rgba(255,255,255,0.02);}

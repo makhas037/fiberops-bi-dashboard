@@ -1,0 +1,5 @@
+/* Component-specific styles */
+.metric-card{background:linear-gradient(90deg, rgba(139,92,246,0.08), rgba(14,107,168,0.04));}
+.primary-button{background:linear-gradient(90deg,#8B5CF6,#0E6BA8);color:white;padding:8px 12px;border-radius:8px;border:none}
+.badge{padding:4px 8px;border-radius:6px;font-size:12px}
+.avatar-circle{border-radius:50%;overflow:hidden;width:40px;height:40px}

@@ -1,0 +1,1650 @@
+FiberOps BI Dashboard: Complete File Structure Documentation & Deployment Guide
+Project Foundation & Entry Point
+app.py (Application Gateway & Orchestrator)
+Purpose: The central nervous system of the application serving as the primary entry point that controls authentication flow, session management, and initial routing decisions.​
+
+Content Requirements:
+
+Import all necessary base dependencies including Streamlit, dotenv for environment variables, and core utility modules
+
+Initialize the Streamlit page configuration with custom title, icon, layout mode set to wide, and initial sidebar state
+
+Load custom CSS from the assets/styles directory to apply dark theme and component styling
+
+Check user authentication state from session storage using utils.auth module
+
+Route unauthenticated users to login/signup interface rendered directly in this file
+
+For authenticated users, import and render the main application layout including sidebar navigation, top header, and main content area
+
+Initialize critical session state variables if they don't exist including current_user, current_workspace, active_dataset, notification_count
+
+Set up global error handlers and logging configuration
+
+Implement session timeout checking mechanism that triggers every page reload
+
+Configure Streamlit's experimental features like fragments and custom components if needed
+
+Connections:
+
+Calls utils.auth.check_authentication() to verify user login status
+
+Imports components.layout.render_sidebar() and components.layout.render_header() for authenticated layout
+
+Loads components.forms.render_login_form() and components.forms.render_signup_form() for unauthenticated state
+
+Injects CSS from assets/styles/main.css, assets/styles/themes.css, and assets/styles/components.css
+
+Reads configuration from config.settings for application-wide constants
+
+Uses utils.session.initialize_session_state() to set up session variables
+
+Deployment Considerations:
+
+Must handle cold starts efficiently since this runs on every page load
+
+Should implement caching for CSS loading to improve performance
+
+Needs proper error boundaries to prevent complete application crashes
+
+Must validate all environment variables are present before proceeding
+
+Configuration Layer (.streamlit/ directory)
+.streamlit/config.toml (Application Configuration Master)
+Purpose: Streamlit's configuration file that defines application-wide settings including theme colors, server behavior, browser settings, and deployment parameters.​
+
+Content Requirements:
+
+[theme] section: Define primaryColor as purple-blue (#8B5CF6), backgroundColor as deep navy (#0F172A), secondaryBackgroundColor as lighter dark (#1E293B), textColor as near-white (#F8FAFC), and font family as sans-serif to match the dark theme shown in screenshots
+
+[server] section: Set maxUploadSize to 10 MB matching dataset upload limits, maxMessageSize to 200 MB for handling large data transfers, enableCORS to false for security, enableXsrfProtection to true, port to 8501 for standard Streamlit deployment
+
+[browser] section: Configure gatherUsageStats to false for privacy, serverAddress to appropriate host, serverPort matching server configuration
+
+[client] section: Set showSidebarNavigation to false since custom navigation is implemented, toolbarMode to minimal to reduce UI clutter, showErrorDetails based on environment (true for development, false for production)
+
+[runner] section: Configure magicEnabled to false for explicit programming, fastReruns to true for better performance, postScriptGC to true for memory management
+
+Connections:
+
+Read automatically by Streamlit runtime during application startup
+
+Affects how all components render including the custom sidebar and header
+
+Influences upload functionality in pages/4_💾_Datasets.py
+
+Controls theme applied globally to all charts in components/charts.py
+
+Deployment Considerations:
+
+Different configurations needed for development versus production environments
+
+Production should have more restrictive security settings and error handling
+
+Consider environment-specific files like config.dev.toml and config.prod.toml
+
+.streamlit/secrets.toml (Sensitive Credentials Vault)
+Purpose: Secure storage for API keys, database credentials, and other sensitive configuration data that must never be committed to version control.​
+
+Content Requirements:
+
+[supabase] section: Store url for Supabase project endpoint, anon_key for client-side operations, service_role_key for admin operations (used in backend only)
+
+[gemini] section: Include api_key for Google Gemini AI service used by Fick AI assistant
+
+[stripe] section: Store publishable_key for client-side Stripe integration, secret_key for server-side payment processing, webhook_secret for verifying webhook signatures from Stripe events
+
+[email] section: Configure smtp_host, smtp_port, smtp_username, smtp_password for sending transactional emails
+
+[security] section: Add jwt_secret for token generation, encryption_key for sensitive data encryption
+
+Include environment indicator like environment = "development" or "production" to adjust behavior
+
+Connections:
+
+Accessed by services/supabase_client.py to initialize database connection
+
+Used by services/gemini_ai.py for AI API calls
+
+Referenced by services/stripe_service.py for payment processing
+
+Required by services/email_service.py for notification sending
+
+Read by utils/auth.py for JWT token operations
+
+Deployment Considerations:
+
+MUST be gitignored and never committed to repository
+
+Use platform-specific secret management in production (Streamlit Cloud secrets, AWS Secrets Manager, Azure Key Vault)
+
+Create .env.example template with placeholder values for team members
+
+Implement validation on startup to ensure all required secrets are present
+
+Rotate keys regularly following security best practices
+
+Assets Layer (Static Resources)
+assets/images/ (Visual Identity Assets)
+Purpose: Central repository for all static image assets including branding, icons, and default user images.​
+
+Content Requirements:
+
+logo.png: Full FiberOps logo with icon and text in high resolution (minimum 512x512px), transparent background PNG format, purple-blue gradient colors matching brand identity, used in sidebar header and login page
+
+logo-icon.png: Icon-only version of logo, square format, same color scheme, used for favicon generation and compact displays
+
+favicon.ico: Multi-resolution favicon file (16x16, 32x32, 48x48) generated from logo-icon.png, displayed in browser tabs
+
+default-avatar.png: Circular default user avatar image showing generic user silhouette or initials placeholder, used when users haven't uploaded profile photos
+
+Connections:
+
+logo.png imported in components/layout.py for sidebar rendering
+
+logo.png used in streamlit_app.py for login/signup page branding
+
+favicon.ico referenced in page configuration via Streamlit settings
+
+default-avatar.png used by components/layout.py when rendering user profile section
+
+assets/styles/main.css (Global Style Foundation)
+Purpose: Master stylesheet defining global CSS variables, base element styles, and fundamental layout rules applied throughout the application.​​
+
+Content Requirements:
+
+Define CSS custom properties (variables) for colors including --primary-color (#8B5CF6), --background-dark (#0F172A), --background-light (#1E293B), --text-primary (#F8FAFC), --text-secondary (#94A3B8), --success-green (#10B981), --error-red (#EF4444), --warning-yellow (#F59E0B)
+
+Set global font family, base font size (16px), line height (1.5), and font smoothing properties
+
+Define container max-widths, padding standards, and responsive breakpoints
+
+Reset default Streamlit styles that conflict with custom design including removing default padding, adjusting button styles, modifying input field appearances
+
+Set global transition durations for hover effects (0.2s ease-in-out)
+
+Define scrollbar styling to match dark theme
+
+Create utility classes for common patterns like .flex-row, .flex-column, .text-center, .mb-1, .mt-2
+
+Connections:
+
+Loaded in streamlit_app.py via st.markdown with unsafe_allow_html=True
+
+Variables referenced by all other CSS files in assets/styles/
+
+Affects all page components and layout elements throughout application
+
+assets/styles/components.css (Component-Specific Styling)
+Purpose: Dedicated stylesheet for reusable component styling including cards, buttons, inputs, and custom UI elements.​
+
+Content Requirements:
+
+Card styles: Define .metric-card class with background gradient, border-radius (12px), padding (24px), shadow effects, hover states with elevation increase
+
+Button styles: Create .primary-button with gradient background, .secondary-button with outline style, .danger-button for destructive actions, all with consistent hover and active states
+
+Input field styles: Style text inputs, textareas, select dropdowns with consistent border colors, focus states with primary color glow, placeholder text styling
+
+Badge and tag styles: Create .badge, .badge-success, .badge-error, .badge-warning with appropriate colors and rounded corners
+
+Modal styles: Define .modal-overlay, .modal-container with backdrop blur effects, slide-in animations
+
+Toggle switch styles: Create custom toggle switches matching the design in Settings page notifications section
+
+Avatar styles: Define .avatar-circle with sizing variants (.avatar-sm, .avatar-md, .avatar-lg)
+
+Connections:
+
+Applied to components rendered in components/cards.py
+
+Used by form elements in components/forms.py
+
+Referenced by modal dialogs in components/modals.py
+
+Styling for user profile avatar in components/layout.py
+
+assets/styles/animations.css (Motion & Interaction Effects)
+Purpose: Keyframe animations and transition definitions for interactive elements, loading states, and visual feedback.​
+
+Content Requirements:
+
+Define @keyframes for fadeIn, fadeOut, slideInRight, slideInLeft, slideInDown for page transitions and modal appearances
+
+Create pulse animation for loading indicators and active elements
+
+Define shimmer effect for skeleton loading states when data is being fetched
+
+Create bounce animation for notification badges
+
+Define spin animation for loading spinners
+
+Add shake animation for form validation errors
+
+Create smooth expansion animations for accordion elements in Help Center
+
+Define thinking dots animation for Fick AI response waiting state (three dots pulsing sequentially)
+
+Connections:
+
+Applied to loading states throughout all pages
+
+Used by components/notifications.py for toast animations
+
+Referenced in components/chat.py for thinking indicator
+
+Applied to modals in components/modals.py
+
+assets/styles/themes.css (Theme System Variables)
+Purpose: Centralized theme management system allowing for potential light/dark mode switching and consistent color application.​
+
+Content Requirements:
+
+Define [data-theme="dark"] selector with all dark theme color variables
+
+Define [data-theme="light"] selector with light theme alternatives (currently using dark theme exclusively based on screenshots)
+
+Create semantic color variables like --color-background-primary, --color-background-secondary, --color-text-primary, --color-border
+
+Define component-specific color tokens like --card-background, --sidebar-background, --header-background
+
+Include shadow definitions for different elevation levels
+
+Define gradient combinations used in buttons and cards
+
+Connections:
+
+Imported after main.css in streamlit_app.py
+
+Referenced by all component stylesheets
+
+Controlled by Settings page Appearance tab theme selector
+
+Applied globally via JavaScript theme switching function
+
+Components Layer (Reusable UI Building Blocks)
+components/init.py (Module Initializer)
+Purpose: Makes the components directory a Python package and optionally exports commonly used components for easier imports.​
+
+Content Requirements:
+
+Can be empty file (minimal approach) or contain imports to expose key components
+
+Optional: Import and expose primary functions like render_sidebar, render_header, render_kpi_card for cleaner imports elsewhere
+
+Document component usage patterns in docstring
+
+components/layout.py (Core Layout Architecture)
+Purpose: Renders the fundamental structural elements of the application including the persistent sidebar navigation, top header bar, and optional footer.​​
+
+Content Requirements:
+
+render_sidebar() function:
+
+Accept parameters: current_page (string indicating active page), user_data (dictionary with user information)
+
+Render logo and app title at the top using image from assets/images/logo.png
+
+Create navigation menu with items: Business Overview, Analytics, Fick AI, Datasets, Workspaces, Settings, Help Center
+
+Each menu item includes emoji/icon, label text, and click handler
+
+Apply active state styling to current_page item using CSS classes
+
+Render user profile section at bottom with avatar (user_data['avatar_url'] or default), name, email
+
+Include Logout button with click handler
+
+Use st.sidebar container for Streamlit layout
+
+Return selected page name when navigation item is clicked
+
+render_header() function:
+
+Accept user_data parameter
+
+Create search bar using st.text_input with magnifying glass icon, placeholder "Search customers, products, orders..."
+
+Render notification bell icon with badge showing unread count fetched from services/database.get_user_notifications()
+
+Implement notification popover using st.popover that displays recent notifications
+
+Render user profile avatar with dropdown menu using st.popover containing "Settings" and "Logout" options
+
+Apply custom CSS for horizontal layout and spacing
+
+Handle notification click events to mark as read
+
+render_footer() function:
+
+Optional simple footer with copyright text and links
+
+Positioned at page bottom with fixed or static positioning
+
+Connections:
+
+Called from streamlit_app.py and all page files in pages/ directory
+
+Uses user data from utils/session.get_session_variable('current_user')
+
+Calls utils/auth.logout_user() when logout clicked
+
+Fetches notifications from services/database.get_user_notifications()
+
+Applies styling from assets/styles/components.css
+
+Triggers page navigation via st.session_state.current_page updates
+
+components/cards.py (Card Component Library)
+Purpose: Provides reusable card components for displaying metrics, datasets, workspaces, and action buttons in a consistent, visually appealing format.​​
+
+Content Requirements:
+
+render_kpi_card() function:
+
+Parameters: title (string), value (number/string), change (percentage), icon (emoji/unicode), color (CSS color string)
+
+Create card container with background, border-radius, padding using st.container
+
+Display icon in specified color at top-left
+
+Show title in small, muted text
+
+Display value in large, bold typography (36-48px equivalent)
+
+Render change indicator with up/down arrow and percentage, colored green for positive, red for negative
+
+Apply hover effect CSS class
+
+Return card element
+
+render_dataset_card() function:
+
+Parameters: dataset (dataset model object), on_apply (callback), on_delete (callback), on_view (callback)
+
+Display dataset name prominently with file type icon
+
+Show metadata: row count, column count, file size, upload date
+
+Display "Applied" badge if dataset.is_applied is True
+
+Render action buttons: "Apply" (if not applied), "View Preview", "Delete" with appropriate icons
+
+Handle button clicks by calling provided callbacks
+
+Apply card styling with hover effects
+
+render_workspace_card() function:
+
+Parameters: workspace (workspace model object), on_open, on_edit, on_delete callbacks
+
+Display workspace name with color indicator dot
+
+Show description text truncated to two lines
+
+Display stats: X Datasets, Y Analyses, Z Charts
+
+Show creation date
+
+Render "Open Workspace" button prominently
+
+Include edit and delete icon buttons
+
+Apply card styling consistent with other cards
+
+render_quick_action_card() function:
+
+Parameters: title, description, icon, button_text, callback
+
+Create compact card with icon at top
+
+Display title and description text
+
+Include full-width button at bottom
+
+Handle click by calling callback function
+
+Connections:
+
+Imported by pages/1_🏢_Business_Overview.py for KPI metrics and quick actions
+
+Used by pages/4_💾_Datasets.py for dataset listing
+
+Referenced by pages/5_💼_Workspaces.py for workspace grid
+
+Applies styling from assets/styles/components.css
+
+Receives data from models/ classes
+
+components/charts.py (Visualization Component Factory)
+Purpose: Creates interactive Plotly charts with consistent styling, hover interactions, and responsive behavior matching the application's design language.​​
+
+Content Requirements:
+
+render_line_chart() function:
+
+Parameters: data (pandas DataFrame), x_col (column name), y_col (column name), title (string), additional formatting options
+
+Create Plotly line chart using plotly.graph_objects or plotly.express
+
+Apply custom styling: line color from theme, marker dots at data points, gridlines, axis labels
+
+Configure hover template to show exact values
+
+Set background to transparent to match application theme
+
+Enable zooming and panning interactions
+
+Return figure object for display with st.plotly_chart
+
+render_pie_chart() function:
+
+Parameters: data (DataFrame), labels (column name), values (column name), title
+
+Create donut chart with hole parameter for modern look
+
+Apply color palette from theme colors
+
+Position labels outside with connecting lines
+
+Show percentage and value in hover tooltip
+
+Add legend on right side or bottom
+
+Configure text size and font to match application typography
+
+render_scatter_plot() function:
+
+Parameters: data, x_col, y_col, title, regression_line (boolean)
+
+Create scatter plot with customizable marker colors and sizes
+
+If regression_line is True, calculate and overlay regression line using scipy or sklearn
+
+Display R² value and equation if regression enabled
+
+Configure axis ranges and labels
+
+Enable interactive features
+
+render_bar_chart() function:
+
+Parameters: data, x_col, y_col, title, orientation ('vertical' or 'horizontal')
+
+Create bar chart with appropriate orientation
+
+Apply gradient fill to bars if desired
+
+Show values on top of bars
+
+Configure spacing and padding
+
+render_heatmap() function:
+
+Parameters: data (correlation matrix or 2D data), title
+
+Create heatmap using plotly
+
+Apply diverging color scale (blue to red through white)
+
+Show values in cells
+
+Configure annotations and axis labels
+
+Connections:
+
+Imported by pages/1_🏢_Business_Overview.py for dashboard charts
+
+Used by pages/2_📊_Analytics.py for analysis result visualization
+
+Called by services/gemini_ai.py when AI generates chart instructions
+
+Used by analytics/visualization.py for creating analysis-specific plots
+
+References theme colors from assets/styles/themes.css via Python configuration
+
+components/modals.py (Dialog & Overlay Manager)
+Purpose: Manages modal dialogs for confirmations, forms, previews, and other overlay interactions requiring user attention.​
+
+Content Requirements:
+
+show_confirmation_modal() function:
+
+Parameters: title, message, on_confirm callback, on_cancel callback
+
+Use st.dialog or custom modal implementation
+
+Display title prominently
+
+Show message text in readable typography
+
+Render two buttons: "Cancel" (secondary) and "Confirm" (primary/danger depending on action)
+
+Handle button clicks by calling appropriate callback
+
+Close modal after action
+
+Return boolean or trigger callback
+
+show_delete_confirmation() function:
+
+Specialized version of confirmation modal
+
+Parameters: item_name, item_type (dataset/workspace/analysis), on_confirm
+
+Display warning icon
+
+Show message: "Are you sure you want to delete [item_name]? This action cannot be undone."
+
+Render "Cancel" and "Delete" (red/danger) buttons
+
+Require explicit confirmation
+
+show_workspace_creation_modal() function:
+
+Parameters: on_create callback
+
+Display form with fields: Workspace Name (required), Description (optional), Color picker, Privacy toggle
+
+Validate inputs: name not empty, reasonable length limits
+
+Show "Cancel" and "Create Workspace" buttons
+
+On create, call callback with form data
+
+Close modal and navigate to new workspace
+
+show_dataset_preview_modal() function:
+
+Parameters: dataset (dataset object)
+
+Display dataset metadata: name, file type, size, row/column counts
+
+Show first 20 rows in scrollable table using st.dataframe
+
+Display column names and inferred data types
+
+Include "Close" button
+
+Make modal wide to accommodate table
+
+Connections:
+
+Called from pages/4_💾_Datasets.py for delete confirmations and previews
+
+Used by pages/5_💼_Workspaces.py for creation and deletion
+
+Referenced by components/cards.py when action buttons are clicked
+
+Applies styling from assets/styles/components.css
+
+components/forms.py (Form Component Library)
+Purpose: Standardized form components for authentication, profile editing, and data input with built-in validation and error handling.​​
+
+Content Requirements:
+
+render_login_form() function:
+
+Parameters: on_submit callback
+
+Create form with email input (text_input with email validation)
+
+Create password input with type="password" and show/hide toggle
+
+Add "Remember me" checkbox
+
+Include "Forgot password?" link (currently placeholder)
+
+Render "Login" button
+
+Implement client-side validation: check fields not empty
+
+On submit, validate inputs then call callback with credentials
+
+Show error messages below button if validation fails
+
+Display loading spinner on button during authentication
+
+render_signup_form() function:
+
+Parameters: on_submit callback
+
+Create form with fields: Full Name, Email, Password, Confirm Password
+
+Add Terms & Conditions checkbox with link
+
+Real-time validation: email format, password length ≥ 6 characters, passwords match
+
+Show password strength indicator (weak/medium/strong)
+
+Display validation errors next to relevant fields
+
+Render "Create Account" button
+
+On submit, validate all fields then call callback
+
+Handle errors from callback and display user-friendly messages
+
+render_profile_form() function:
+
+Parameters: user_data (current values), on_save callback
+
+Pre-fill form fields with user_data values
+
+Create two-column layout: Full Name | Email, Phone | Company
+
+Add full-width Bio textarea
+
+Include avatar upload section with preview
+
+Show "Cancel" and "Save Changes" buttons
+
+On cancel, revert all fields to original values
+
+On save, validate required fields then call callback with updated data
+
+Display success/error messages
+
+render_password_change_form() function:
+
+Parameters: on_submit callback
+
+Create form with three password inputs: Current Password, New Password, Confirm New Password
+
+Show password requirements list
+
+Real-time validation: new password meets requirements, passwords match
+
+Display password strength meter for new password
+
+Render "Cancel" and "Update Password" buttons
+
+On submit, validate all requirements then call callback
+
+Clear password fields after successful change
+
+Connections:
+
+render_login_form and render_signup_form called from streamlit_app.py for unauthenticated users
+
+render_profile_form used in pages/6_⚙️_Settings.py Profile tab
+
+render_password_change_form used in pages/6_⚙️_Settings.py Security tab
+
+Calls utils/validators.py for input validation
+
+Triggers utils/auth.py functions for authentication
+
+Updates data via services/database.py
+
+components/navigation.py (Navigation Helper Components)
+Purpose: Provides supplementary navigation elements like breadcrumbs, tabs, and workspace selectors for improved user orientation.​
+
+Content Requirements:
+
+render_breadcrumbs() function:
+
+Parameters: path (list of tuples with label and page)
+
+Display horizontal breadcrumb trail with separator (/ or >)
+
+Make each breadcrumb clickable except last one (current page)
+
+Apply subtle hover effect on clickable items
+
+Example: "Workspaces > Marketing Analysis > Datasets"
+
+render_tabs() function:
+
+Parameters: tabs (list of tab labels), active_tab (current tab index), on_change callback
+
+Create horizontal tab bar
+
+Style active tab with underline or background fill
+
+Apply hover effect to inactive tabs
+
+Call on_change callback when tab clicked, passing new tab index
+
+Used in Settings page for Profile/Notifications/Security/Appearance/Billing sections
+
+render_workspace_selector() function:
+
+Parameters: workspaces (list of workspace objects), current_workspace (ID), on_change callback
+
+Create dropdown selector or custom popover
+
+Display current workspace name with color indicator
+
+Show list of all user workspaces when opened
+
+Include "View All Workspaces" option at bottom
+
+Call on_change when workspace selected, passing workspace ID
+
+Update session state with new current_workspace
+
+Connections:
+
+render_breadcrumbs used in pages/workspace_detail.py
+
+render_tabs extensively used in pages/6_⚙️_Settings.py
+
+render_workspace_selector potentially added to components/layout.py header area
+
+Applies styling from assets/styles/components.css
+
+components/notifications.py (Notification System)
+Purpose: Manages toast notifications, alerts, and the notification popover for real-time user feedback.​​
+
+Content Requirements:
+
+show_success_toast() function:
+
+Parameters: message (string), duration (milliseconds, default 3000)
+
+Display green toast notification with checkmark icon
+
+Position at top-right of screen
+
+Fade in with animation, display for duration, fade out
+
+Use Streamlit's st.toast or custom HTML/JS implementation
+
+Example: "✅ Dataset uploaded successfully!"
+
+show_error_toast() function:
+
+Parameters: message, duration
+
+Display red toast with X icon
+
+Same positioning and animation as success
+
+Example: "❌ Failed to delete dataset"
+
+show_warning_toast() function:
+
+Parameters: message, duration
+
+Display yellow/orange toast with warning triangle icon
+
+Example: "⚠️ Session will expire in 5 minutes"
+
+show_info_toast() function:
+
+Parameters: message, duration
+
+Display blue toast with info icon
+
+Example: "ℹ️ New version available"
+
+render_notification_popover() function:
+
+Parameters: notifications (list of notification objects), on_dismiss callback
+
+Display in dropdown beneath notification bell in header
+
+Show title "Notifications" with unread count
+
+List recent notifications (5-10 items) with timestamp
+
+Highlight unread notifications with different background
+
+Include "View all notifications" link at bottom
+
+Call on_dismiss when viewed to mark as read
+
+Empty state: "No notifications" with icon
+
+Connections:
+
+Toast functions called throughout application after operations: database.py operations, file uploads in pages/4_💾_Datasets.py, form submissions
+
+render_notification_popover called from components/layout.py header
+
+Notifications fetched from services/database.get_user_notifications()
+
+Uses animations from assets/styles/animations.css
+
+components/chat.py (Conversational UI Components)
+Purpose: Specialized components for the Fick AI chat interface including message bubbles, input fields, and conversation history.​​
+
+Content Requirements:
+
+render_chat_message() function:
+
+Parameters: message (dict with text, timestamp, is_user flag, optional chart_data), is_user (boolean)
+
+Create message bubble container
+
+If is_user is True: align right, apply purple-blue gradient background, white text
+
+If is_user is False: align left, apply dark grey background, light text
+
+Display message text with markdown formatting support (bold, lists, code blocks)
+
+Show timestamp in small text below message
+
+If message contains chart_data, render embedded chart using components/charts.py functions
+
+Apply rounded corners with appropriate sharp corner (bottom-right for user, bottom-left for AI)
+
+Support multi-line messages with appropriate spacing
+
+render_chat_input() function:
+
+Parameters: on_send callback, placeholder text
+
+Create text input area at bottom of chat interface
+
+Use st.text_area or st.chat_input with auto-expand feature
+
+Position send button (paper airplane icon) to right of input
+
+Disable send button if input is empty
+
+Handle Enter key press to send (Shift+Enter for new line)
+
+Clear input after successful send
+
+Call on_send callback with message text
+
+render_chat_suggestions() function:
+
+Parameters: suggestions (list of suggestion texts), on_click callback
+
+Display in 2x2 grid layout for initial chat state
+
+Each suggestion as clickable card/pill with icon and text
+
+Apply hover effect (background change, slight elevation)
+
+Call on_click when suggestion clicked, passing suggestion text
+
+Examples: "Show me sales trends chart", "Explain my dashboard analytics"
+
+render_thinking_indicator() function:
+
+Display three animated dots in AI message position
+
+Use animation from assets/styles/animations.css
+
+Show "Thinking..." text
+
+Position as if it's an AI message
+
+render_chat_history_sidebar() function:
+
+Parameters: conversations (list of conversation objects), on_select callback
+
+Display in left sidebar within Fick AI page
+
+Show "Chat History" title with search bar
+
+List conversations with truncated first message as title and timestamp
+
+Highlight active conversation
+
+Apply hover effect to conversation items
+
+Call on_select when conversation clicked
+
+Include "New Chat" button at top
+
+Connections:
+
+All functions used in pages/3_✨_Fick_AI.py
+
+render_chat_message displays responses from services/gemini_ai.generate_ai_response()
+
+Conversations loaded from services/database via models/conversation table
+
+Applies styling from assets/styles/components.css and assets/styles/animations.css
+
+Pages Layer (Application Screens)
+pages/1_🏢_Business_Overview.py (Dashboard Homepage)
+Purpose: Primary landing page after login displaying high-level business metrics, key visualizations, quick action cards, and recent activity summary.​​
+
+Content Requirements:
+
+Import and call authentication check function from utils/auth at top of file to redirect if not authenticated
+
+Render sidebar and header by calling components/layout functions
+
+Display page title "Analytics Dashboard" and subtitle showing active dataset name and record count fetched from session state
+
+Add "Generate Report" button in top-right that calls report generation function
+
+Create four-column layout for KPI metrics using components/cards.render_kpi_card()
+
+Fetch metric data: total revenue, average order value, unique customers count, products count from services/database or calculate from active dataset
+
+Calculate percentage changes compared to previous month for each metric
+
+Display Revenue Over Time line chart using components/charts.render_line_chart() with monthly aggregated data
+
+Display Category Breakdown pie chart using components/charts.render_pie_chart() with category distribution
+
+Create Quick Actions section with four cards: "Upload Data", "Build Dashboard", "Chat with AI", "Advanced Analytics"
+
+Each quick action button navigates to corresponding page by updating st.session_state.current_page and calling st.rerun()
+
+Display Recent Activity section listing last 5-10 uploaded datasets or analyses with timestamps
+
+Implement floating Fick AI assistant button at bottom-right that triggers popover with quick suggestions
+
+Handle all button clicks with appropriate navigation or modal opening
+
+Implement error handling for data loading failures with fallback UI
+
+Connections:
+
+Calls utils/auth.check_authentication() for access control
+
+Uses components/layout.render_sidebar() and render_header()
+
+Calls components/cards.render_kpi_card() multiple times
+
+Uses components/charts functions for visualizations
+
+Fetches data from services/database.get_dashboard_metrics()
+
+Navigates to other pages by updating session state
+
+Applies global CSS from assets/styles/
+
+pages/2_📊_Analytics.py (Advanced Analytics Engine)
+Purpose: Comprehensive analysis interface allowing users to select datasets, choose from 20+ analysis techniques, configure parameters, execute analyses, and view interactive results.​
+
+Content Requirements:
+
+Perform authentication check and render standard layout (sidebar, header)
+
+Display page title "Advanced Analytics" with descriptive subtitle
+
+Create Step 1: Dataset selection dropdown populated from services/database.get_user_datasets() filtered by current workspace
+
+Show loading spinner while fetching datasets
+
+On dataset selection, load metadata (column names, types) from services/database
+
+Create Step 2: Analysis technique dropdown with 20+ options organized by category: Statistical (Descriptive Statistics, Correlation, Hypothesis Testing), Regression (Linear, Multiple, Logistic, Polynomial), Classification (Decision Tree, Random Forest, KNN, Naive Bayes, SVM), Clustering (K-Means, Hierarchical, DBSCAN), Time Series (Forecasting, Moving Average), Advanced (PCA, Sentiment Analysis, Market Basket)
+
+Implement dynamic parameter generation based on selected technique using st.selectbox, st.number_input, st.multiselect as appropriate
+
+Example: Linear Regression shows two dropdowns for X-axis and Y-axis column selection from numeric columns
+
+Validate parameter selections: ensure required fields filled, columns selected are appropriate data types
+
+Display "Run Analysis" button prominently, disabled until all requirements met
+
+On button click, show loading spinner "Running analysis..."
+
+Call appropriate analytics function from analytics/ modules passing dataset and parameters
+
+Handle analysis execution errors gracefully with informative error messages
+
+Display results section with smooth fade-in animation containing: main visualization chart, key metrics/statistics cards, detailed results table if applicable, interpretation text
+
+Add "Save to Workspace" button allowing users to save analysis configuration and results
+
+Include "Export Results" dropdown with options: Download Chart (PNG), Export Data (CSV), Generate Report (PDF)
+
+Implement analysis history sidebar showing previously run analyses for quick reload
+
+Connections:
+
+Authenticates via utils/auth
+
+Loads datasets from services/database.get_user_datasets()
+
+Calls analysis functions from analytics/regression.py, analytics/clustering.py, analytics/statistical.py, etc.
+
+Uses components/charts functions to display result visualizations
+
+Saves results via services/database.save_analysis()
+
+Exports using utils/helpers export functions
+
+Uses components/modals for save-to-workspace dialog
+
+pages/3_✨_Fick_AI.py (AI Analytics Assistant)
+Purpose: Interactive chat interface powered by Gemini AI for natural language data analysis, insight generation, chart creation, and troubleshooting assistance.​​
+
+Content Requirements:
+
+Check authentication and render layout
+
+Display page title "Fick AI - Full Analytics Assistant" with subtitle describing capabilities
+
+Implement left sidebar for chat history using components/chat.render_chat_history_sidebar()
+
+Load previous conversations from services/database filtered by current user and workspace
+
+Create dataset selector dropdown at top of main chat area
+
+Load selected dataset into memory for context provision to AI
+
+Initialize chat message display area with scrollable container
+
+Check if current conversation has messages: if empty, display suggestion cards using components/chat.render_chat_suggestions()
+
+If messages exist, iterate through conversation history and render each message using components/chat.render_chat_message()
+
+Implement chat input at bottom using components/chat.render_chat_input()
+
+When user sends message: add user message to conversation immediately, display thinking indicator, call services/gemini_ai.generate_ai_response() with message, dataset context, and conversation history
+
+Parse AI response for text and chart instructions using services/gemini_ai.parse_chart_instructions()
+
+If chart instructions present, generate chart using services/gemini_ai.generate_chart_from_instructions() and display inline
+
+Add AI response message to conversation display, removing thinking indicator
+
+Save conversation update to database via services/database
+
+Handle API errors gracefully with retry option
+
+Implement "New Chat" functionality to start fresh conversation
+
+Add "Export Conversation" button to download chat as text or PDF
+
+Include option to copy individual AI responses to clipboard
+
+Connections:
+
+Uses components/chat for all UI elements
+
+Calls services/gemini_ai for AI processing
+
+Loads datasets from services/database and services/storage
+
+Saves conversations to services/database
+
+Uses components/charts if AI generates chart instructions
+
+Applies chat-specific styling from assets/styles/components.css
+
+pages/4_💾_Datasets.py (Dataset Management Hub)
+Purpose: Central interface for uploading, viewing, managing, and organizing datasets with metadata display and action buttons.​​
+
+Content Requirements:
+
+Authenticate and render standard layout
+
+Display page title "My Datasets" with subtitle about organization and AI usage
+
+Create upload section at top with drag-and-drop area using st.file_uploader
+
+Configure file uploader to accept CSV, XLSX, JSON formats with 10MB size limit
+
+Display upload area with dashed border, upload icon, instruction text "Drag & drop your dataset"
+
+When file selected, show file name, size, and preview button
+
+Add "Start Upload" button that becomes active after file selection
+
+On upload click: show processing spinner, read file using utils/helpers parsing functions, extract metadata (row count, column count, column names, data types), upload file to Supabase Storage via services/storage.upload_dataset_file(), save metadata to database via services/database.create_dataset(), show success toast, refresh dataset list
+
+Handle upload errors: file too large, invalid format, storage failure with appropriate error messages
+
+Below upload section, check if user has datasets: if not, display empty state with message and icon
+
+If datasets exist, create grid or list view of dataset cards using components/cards.render_dataset_card()
+
+For each dataset: display name with file type icon, show metadata (rows, columns, size, date), show "Applied" badge if dataset.is_applied is true, include action buttons (Apply, View Preview, Delete)
+
+Implement Apply functionality: call services/database.apply_dataset() which sets is_applied=true for selected, false for others, show success toast, refresh view
+
+Implement View Preview: call components/modals.show_dataset_preview_modal() passing dataset object, modal displays first 20 rows in table format
+
+Implement Delete: show confirmation modal via components/modals.show_delete_confirmation(), on confirm call services/storage.delete_dataset_file() and services/database.delete_dataset(), show success toast, refresh list
+
+Add search/filter bar if many datasets exist
+
+Include sort dropdown (Most Recent, Name A-Z, Size)
+
+Connections:
+
+Uses components/cards.render_dataset_card()
+
+Uploads files via services/storage.upload_dataset_file()
+
+Manages metadata through services/database CRUD operations
+
+Uses components/modals for preview and delete confirmation
+
+Calls utils/validators for file validation
+
+Uses utils/helpers for file parsing
+
+Shows notifications via components/notifications toast functions
+
+pages/5_💼_Workspaces.py (Workspace Organization Center)
+Purpose: Interface for creating, managing, and organizing multiple workspaces to separate different projects, clients, or business areas.​
+
+Content Requirements:
+
+Authenticate and render layout
+
+Display page title "My Workspaces" with subtitle explaining workspace benefits
+
+Add prominent "+ Create New Workspace" button in top-right
+
+Fetch user workspaces from services/database.get_user_workspaces()
+
+Check if workspaces exist: if not, display empty state with large icon, message "No workspaces yet", description, and "Create Your First Workspace" button
+
+If workspaces exist, display as grid of cards using components/cards.render_workspace_card()
+
+Each workspace card shows: workspace color indicator dot, name, description (truncated), stats (X Datasets, Y Analyses, Z Charts), created date, "Open Workspace" button, edit and delete icon buttons
+
+Implement hover effect on cards (elevation increase)
+
+On "Create New Workspace" button click: open components/modals.show_workspace_creation_modal()
+
+Modal contains form: Workspace Name (required text input), Description (optional textarea), Color picker for visual identification, Privacy toggle (Private/Shared - future feature)
+
+Validate workspace name not empty on form submission
+
+On create, call services/database.create_workspace() with form data, show success toast, close modal, navigate to new workspace detail view
+
+On "Open Workspace" click: navigate to pages/workspace_detail.py passing workspace ID
+
+On edit icon click: open edit modal (similar to creation) pre-filled with workspace data, on save call services/database.update_workspace()
+
+On delete icon click: show delete confirmation modal, on confirm call services/database.delete_workspace() and refresh list
+
+Implement workspace search/filter functionality if many workspaces
+
+Add sort options (Recent, Name, Most Used)
+
+Connections:
+
+Uses components/cards.render_workspace_card()
+
+Uses components/modals for creation, edit, and delete
+
+Calls services/database for all workspace CRUD operations
+
+Navigates to workspace_detail.py on open
+
+Uses models/workspace.py data structure
+
+Shows notifications via components/notifications
+
+pages/workspace_detail.py (Individual Workspace View)
+Purpose: Detailed view of a single workspace showing associated datasets, saved analyses, and charts with ability to add content and manage workspace settings.​
+
+Content Requirements:
+
+Get workspace_id from session state or URL parameter
+
+Fetch workspace details from services/database.get_workspace_by_id()
+
+Display breadcrumb navigation using components/navigation.render_breadcrumbs(): "Workspaces > [Workspace Name]"
+
+Show workspace header with editable name (click to edit inline), description, color indicator
+
+Add action buttons: "Settings" (gear icon), "Share" (future), "Delete Workspace"
+
+Create three-tab interface using components/navigation.render_tabs(): "Datasets", "Analyses", "Charts"
+
+Datasets Tab: List datasets linked to this workspace using similar UI to pages/4_💾_Datasets.py, include "+ Add Dataset" button to link existing or upload new, show "Remove from Workspace" option (not delete, just unlink)
+
+Analyses Tab: Display saved analysis results as grid of cards, each card shows analysis type, date run, dataset used, thumbnail preview of chart, key metric result, actions: "View Results" (opens full analysis with chart and metrics), "Re-run" (reopens Analytics page with saved parameters), "Delete" (removes from workspace)
+
+Charts Tab: Show custom charts and dashboards created within workspace, support creating new chart from workspace datasets, display charts in grid with edit and delete options, allow arranging multiple charts into dashboard layout
+
+Implement "Save to Workspace" functionality throughout app: when user runs analysis on Analytics page, show "Save to Workspace" button in results, opens modal to select workspace and optionally name the analysis
+
+Workspace Settings modal: edit name/description/color, privacy settings, danger zone with delete workspace option requiring confirmation
+
+Handle workspace not found error gracefully
+
+Connections:
+
+Fetches data from services/database workspace-related queries
+
+Uses components/navigation for breadcrumbs and tabs
+
+Uses components/cards for displaying datasets and analyses
+
+Calls analytics/ modules for re-running analyses
+
+Uses components/modals for settings and confirmations
+
+Integrates with pages/2_📊_Analytics.py save functionality
+
+pages/6_⚙️_Settings.py (User Settings & Preferences)
+Purpose: Comprehensive settings interface with multiple tabs for profile management, notifications, security, appearance, and billing configuration.​​
+
+Content Requirements:
+
+Authenticate and render layout
+
+Display page title "Settings" with subtitle "Manage your account preferences and settings"
+
+Create five-tab interface using components/navigation.render_tabs(): Profile, Notifications, Security, Appearance, Billing
+
+Profile Tab:
+
+Render profile form using components/forms.render_profile_form()
+
+Load current user data from services/database.get_user_by_id()
+
+Display avatar upload section with current avatar or default
+
+Show form fields: Full Name, Email (possibly read-only), Phone, Company, Bio
+
+Include "Cancel" and "Save Changes" buttons
+
+On save, validate inputs via utils/validators, call services/database.update_user_profile(), show success toast
+
+Handle avatar upload separately via services/storage.upload_profile_photo()
+
+Notifications Tab:
+
+Display list of notification preferences with toggle switches
+
+Preferences: Email Notifications, Push Notifications, Weekly Report, Monthly Report, Sales Alerts, Customer Alerts
+
+Each has toggle using Streamlit checkbox or custom toggle component
+
+Load current preferences from database
+
+On toggle change, immediately save to database via services/database.update_user_preferences()
+
+Show success toast after save
+
+No separate save button needed (auto-save on change)
+
+Security Tab:
+
+Display Two-Factor Authentication section with toggle (currently off), description
+
+Show Session Timeout dropdown with options: 15 min, 30 min, 1 hour, 2 hours, Never
+
+Auto-save on selection change
+
+Display Login Alerts toggle to receive email notifications on new logins
+
+Large "Change Password" button
+
+On click, expand password change form using components/forms.render_password_change_form()
+
+Form has fields: Current Password, New Password, Confirm New Password
+
+Show password requirements and strength meter
+
+On submit, call utils/auth.change_password() with Supabase Auth, show success/error message
+
+Appearance Tab:
+
+Display theme selection with two large option cards: Light Mode and Dark Mode
+
+Show visual previews of each theme
+
+Highlight currently selected theme (dark mode based on screenshots)
+
+On theme selection, apply theme by updating CSS variables and saving preference to database
+
+Display Font Size dropdown: Small, Medium, Large
+
+On change, update font size CSS variables and save preference
+
+Show Compact Mode toggle to reduce spacing
+
+On toggle, apply compact mode class and save preference
+
+All changes apply immediately and auto-save
+
+Billing Tab:
+
+Display Current Plan card showing plan name, pricing, billing frequency, next billing date, status (Active)
+
+Include "Upgrade Plan" or "View Plans" button
+
+Show Payment Method card with masked card number, expiration date, "Edit" button
+
+Display Billing History table with columns: Date, Description, Amount, Status, Action (Download Invoice)
+
+Load data from Stripe via services/stripe_service.get_subscription_status()
+
+"Manage Subscription" button redirects to Stripe Customer Portal via services/stripe_service.create_customer_portal_session()
+
+"Upgrade" button redirects to Stripe Checkout via services/stripe_service.create_checkout_session()
+
+Handle Stripe webhook events for subscription changes
+
+Connections:
+
+Uses components/navigation.render_tabs() for tab interface
+
+Uses components/forms for profile and password forms
+
+Loads/saves data via services/database user and preferences operations
+
+Uses utils/auth for password changes
+
+Integrates with services/stripe_service for billing
+
+Uses utils/validators for input validation
+
+Shows notifications via components/notifications
+
+pages/7_❓_Help_Center.py (Support & Documentation)
+Purpose: Centralized help resources including FAQs, contact information, documentation links, and integration with Fick AI for support questions.​
+
+Content Requirements:
+
+Authenticate and render layout
+
+Display page title "Help Center" with subtitle "Find answers, guides, and get support"
+
+Create large search bar at top with placeholder "Search for help articles..."
+
+Implement real-time search functionality that filters FAQ items below as user types
+
+Create Contact Support section with three cards side-by-side: Email Support (icon, email address support@fiberops.com, "Response within 2 hours", "Send Email" button opens email client), Phone Support (icon, phone number, "Available 24/7", "Call Now" button), Documentation (icon, description, "API references & tutorials", "Browse Docs" button opens new tab)
+
+Add category tabs using components/navigation.render_tabs(): All Topics, Getting Started, Features, Troubleshooting
+
+Display FAQ section with expandable accordion items using st.expander
+
+Each FAQ item has question as title, answer content with formatted text, possible links, images, code snippets
+
+Example FAQs: "How do I get started with FiberOps?", "How does churn prediction work?", "Dashboard is not loading", "Data not showing up", "How do I export reports?", "Can I customize the dashboard?", "Fick AI not responding"
+
+Organize FAQs by category matching tabs
+
+At bottom, display "Still need help?" card with buttons: "Chat with Fick AI" (navigates to Fick AI page), "Contact Support" (scrolls to contact section)
+
+Implement analytics tracking for which help articles are most viewed
+
+Connections:
+
+Uses components/navigation for category tabs
+
+Links to pages/3_✨_Fick_AI.py for AI support
+
+Uses external links for documentation site
+
+Applies styling from assets/styles/components.css
+
+Could integrate with services/database to track help article views
+
+Utils Layer (Utility Functions)
+utils/init.py (Utils Package Initializer)
+Purpose: Makes utils directory a Python package, optionally exports commonly used utility functions.​
+
+utils/auth.py (Authentication & Authorization Manager)
+Purpose: Centralized authentication logic handling login, signup, logout, password management, and session validation with Supabase Auth.​
+
+Content Requirements:
+
+login_user() function:
+
+Parameters: email (string), password (string)
+
+Call Supabase Auth sign_in_with_password method via services/supabase_client
+
+Handle response: on success, extract user data and session token, store in session state via utils/session.set_session_variable(), fetch additional profile data from database, return success status and user object
+
+On failure, parse error (invalid credentials, unconfirmed email, network error), return error status and message
+
+Log authentication attempts for security monitoring
+
+signup_user() function:
+
+Parameters: email, password, full_name
+
+Call Supabase Auth sign_up method with email and password
+
+Include user_metadata with full_name for profile creation
+
+Handle response: on success, create profile record in database via services/database.create_user(), send welcome email via services/email_service, return success status
+
+On failure (email exists, weak password), return appropriate error message
+
+Implement rate limiting to prevent abuse
+
+logout_user() function:
+
+Call Supabase Auth sign_out method
+
+Clear all session state variables via utils/session.clear_session()
+
+Redirect to login page using st.rerun or page switching
+
+Show logout success message
+
+check_authentication() function:
+
+Check if user session exists in st.session_state
+
+Verify session token validity with Supabase
+
+Check session timeout against last activity timestamp
+
+If authenticated and valid, return True
+
+If not authenticated or expired, return False and trigger logout
+
+Update last activity timestamp on successful check
+
+get_current_user() function:
+
+Retrieve current user data from session state
+
+If not in session, fetch from database using session token
+
+Return user object or None if not authenticated
+
+reset_password() function:
+
+Parameters: email
+
+Call Supabase Auth resetPasswordForEmail method
+
+Send password reset email via Supabase
+
+Return success/failure status
+
+change_password() function:
+
+Parameters: current_password, new_password
+
+Verify current_password by attempting re-authentication
+
+If valid, call Supabase Auth updateUser with new password
+
+Return success/failure status
+
+Connections:
+
+Called from streamlit_app.py on every page load
+
+Used by components/forms.py login and signup forms
+
+Called by components/layout.py logout functionality
+
+Uses services/supabase_client for all Auth API calls
+
+Stores data via utils/session functions
+
+Sends emails via services/email_service
+
+utils/session.py (Session State Manager)
+Purpose: Manages Streamlit session state variables, provides getter/setter functions, handles session initialization and cleanup.​
+
+Content Requirements:
+
+initialize_session_state() function:
+
+Check if session state variables are initialized
+
+If not, create all required variables with default values: current_user (None), is_authenticated (False), current_page ('Business Overview'), current_workspace (None), active_dataset (None), notification_count (0), last_activity (datetime.now()), theme ('dark'), selected_analysis (None)
+
+Call once from streamlit_app.py at startup
+
+get_session_variable() function:
+
+Parameters: key (string), default (any, optional)
+
+Check if key exists in st.session_state
+
+Return value if exists, otherwise return default
+
+Provides safe access to session variables
+
+set_session_variable() function:
+
+Parameters: key (string), value (any)
+
+Set st.session_state[key] = value
+
+Update last_activity timestamp if setting user-related data
+
+Provides centralized setter for tracking changes
+
+clear_session() function:
+
+Clear all session state variables
+
+Reset to initial state as if new session
+
+Called during logout
+
+check_session_timeout() function:
+
+Get last_activity timestamp from session
+
+Calculate time difference from current time
+
+Get timeout duration from user preferences or config
+
+If exceeded, call logout and return False
+
+Otherwise update last_activity and return True
+
+update_last_activity() function:
+
+Set last_activity to datetime.now()
+
+Called on every user interaction
+
+Connections:
+
+Used throughout entire application for state management
+
+Called by utils/auth for storing authentication data
+
+Referenced by all pages for accessing current_user, current_workspace, etc.
+
+Used by components/layout for displaying user info and navigation state
+
+utils/validators.py (Input Validation Library)
+Purpose: Centralized validation functions for emails, passwords, files, and data integrity checks ensuring data quality and security.​
+
+Content Requirements:
+
+validate_email() function:
+
+Parameters: email (string)
+
+Use regex pattern or validators library to check email format
+
+Check for common typos (gmial.com, etc.)
+
+Return tuple (is_valid: bool, error_message: string or None)
+
+validate_password() function:
+
+Parameters: password (string)
+
+Check minimum length (6 characters)
+
+Optionally check for complexity requirements (uppercase, lowercase, numbers, special chars)
+
+Return tuple (is_valid: bool, strength: string 'weak'/'medium'/'strong', error_message: string or None)
+
+validate_file_type() function:
+
+Parameters: filename (string), allowed_types (list of extensions)
+
+Extract file extension from filename
+
+Check if extension in allowed_types (case-insensitive)
+
+Return is_valid boolean and error message if invalid
+
+validate_file_size() function:
+
+Parameters: file (UploadedFile object), max_size_mb (int)
+
+Get file size in bytes
+
+Compare to max_size_mb converted to bytes
+
+Return is_valid boolean and error message if too large
+
+validate_dataframe() function:
+
+Parameters: df (pandas DataFrame)
+
+Check if DataFrame is not empty (has rows)
+
+Check if has columns
+
+Verify no completely null columns
+
+Return is_valid boolean and list of issues found
+
+validate_column_selection() function:
+
+Parameters: df (DataFrame), columns (list of column names), required_types (list of dtype strings, optional)
+
+Check all columns exist in df
+
+If required_types specified, check column data types match
+
+Return is_valid boolean and error message
+
+validate_workspace_name() function:
+
+Parameters: name (string)
+
+Check not empty
+
+Check length between min and max (e.g., 1-100 chars)
+
+Check doesn't contain invalid characters
+
+Return is_valid and error message
+
+Connections:
+
+Called by components/forms.py for all form validation
+
+Used by pages/4_💾_Datasets.py for file upload validation
+
+Referenced by services/database.py before inserting data
+
+Used by pages/2_📊_Analytics.py for parameter validation
+
+utils/formatters.py (Data Formatting Utilities)
+Purpose: Consistent formatting functions for displaying currency, numbers, dates, and other data types throughout the application.​
+
+Content Requirements:
+
+format_currency() function:
+
+Parameters: value (number), currency_symbol (string, default '$')
+
+Format number with thousands separators and two decimal places
+
+Prepend currency symbol
+
+Example: 2456
